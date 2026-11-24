@@ -1,5 +1,5 @@
 // Mock data for the score-trend prototype. Weekly scores refresh every Friday after close.
-const WEEKS = 26;
+const WEEKS = 52;
 const LAST_REFRESH = new Date('2026-11-20T00:00:00');
 
 export const weekDates = Array.from({ length: WEEKS }, (_, i) => {
@@ -44,33 +44,33 @@ export const STOCKS = {
     universe: true, inPlan: false,
     candles: candles(7, 492.76),
     scores: {
-      FQS: series(11, 62, 71),
-      TMS: series(23, 74, 48),
-      DVES: series(37, 44, 63, { startAt: 6 }), // DVES launched ~20 weeks ago
+      FQS: series(11, 62, 71, { startAt: 42 }),
+      TMS: series(23, 74, 48, { startAt: 42 }),
+      DVES: series(37, 44, 63, { startAt: 42 }),
       SMAS: 58,
     },
-    note: 'Typical case. DVES has only 20 weeks of history.',
+    note: 'Today: about 10 weeks of history, so only 3M is offered and lines start part way across.',
   },
   NVDA: {
     symbol: 'NVDA', name: 'NVIDIA Corporation', logo: 'nv', price: 182.41, chg: -2.13, chgPct: -1.15, ma20: 179.6,
     universe: true, inPlan: true,
     candles: candles(19, 182.41, 38, 0.009),
     scores: {
-      FQS: series(5, 70, 78, { gaps: [21] }),
-      TMS: series(9, 52, 66, { gaps: [21] }),
-      DVES: series(13, 58, 61, { startAt: 6, gaps: [21] }),
+      FQS: series(5, 70, 78, { gaps: [47] }),
+      TMS: series(9, 52, 66, { gaps: [47] }),
+      DVES: series(13, 58, 61, { startAt: 26, gaps: [47] }),
       SMAS: 64,
     },
-    note: 'One weekly refresh missing (Oct 16), all scores at 60+.',
+    note: 'Future state: a full year of FQS/TMS (DVES 6 months), so 3M, 6M and 1Y all show. One weekly refresh is missing; all scores are at 60+.',
   },
   PLTR: {
     symbol: 'PLTR', name: 'Palantir Technologies', logo: 'pl', price: 168.9, chg: 3.42, chgPct: 2.07, ma20: 161.2,
     universe: true, inPlan: false, newToUniverse: true,
     candles: candles(29, 168.9, 38, 0.012),
     scores: {
-      FQS: series(41, 50, 55, { startAt: 23 }),
-      TMS: series(43, 70, 77, { startAt: 23 }),
-      DVES: series(47, 60, 52, { startAt: 23 }),
+      FQS: series(41, 50, 55, { startAt: 49 }),
+      TMS: series(43, 70, 77, { startAt: 49 }),
+      DVES: series(47, 60, 52, { startAt: 49 }),
       SMAS: 61,
     },
     note: 'Joined the Universe 3 weeks ago.',

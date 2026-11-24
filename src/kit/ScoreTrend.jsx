@@ -3,7 +3,8 @@ import { Maximize2, Lock, X, Info, CircleAlert } from 'lucide-react';
 import { SCORE_META, THRESHOLD, weekDates, fmtWeek, ULTRA_LAUNCH } from '../mocks/stocks';
 import { Card } from './Frame';
 
-const SPARK_WEEKS = 12;
+const SPARK_WEEKS = 13; // 3 months
+const RANGES = [{ label: '3M', w: 13 }, { label: '6M', w: 26 }, { label: '1Y', w: 52 }];
 
 // ---------- helpers ----------
 const lastIdx = (arr) => { for (let i = arr.length - 1; i >= 0; i--) if (arr[i] != null) return i; return -1; };
@@ -93,7 +94,7 @@ export function WeeklyScoresCard({ stock, tier, onExpand, onUpsell, watching }) 
         <div>
           <h2 className="text-[20px] font-semibold leading-tight">Weekly Scores</h2>
           <div className="text-[12px] text-s-muted mt-0.5">
-            Updated {fmtWeek(weekDates[last])} · {ultra ? 'last 12 weeks' : 'this week'}
+            Updated {fmtWeek(weekDates[last])} · {ultra ? 'last 3 months' : 'this week'}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -143,7 +144,7 @@ export function WeeklyScoresCard({ stock, tier, onExpand, onUpsell, watching }) 
         {!ultra && (
           <div className="absolute inset-x-0 top-0 h-[168px] grid place-items-center pointer-events-none">
             <button onClick={onUpsell} className="pointer-events-auto flex items-center gap-2 rounded-full bg-s-ultra text-white text-[13px] font-semibold pl-3 pr-4 h-10 shadow-md">
-              <Lock className="h-4 w-4" /> See 12-week trends with Ultra
+              <Lock className="h-4 w-4" /> See 3-month trends with Ultra
             </button>
           </div>
         )}
@@ -162,8 +163,9 @@ export function WeeklyScoresCard({ stock, tier, onExpand, onUpsell, watching }) 
 export function TrendSheet({ stock, focus, onClose }) {
   const sc = stock.scores;
   const maxPts = Math.max(...SCORE_META.map((m) => countPts(sc[m.key])));
-  const can26 = maxPts > 12;
-  const [range, setRange] = useState(12);
+  // A range appears only once some score has more history than the range below it
+  const ranges = RANGES.filter((r, i) => i === 0 || maxPts > RANGES[i - 1].w);
+  const [range, setRange] = useState(13);
   const [on, setOn] = useState(() => Object.fromEntries(SCORE_META.map((m) => [m.key, true])));
   const [hi, setHi] = useState(null);
   const svgRef = useRef(null);
@@ -185,6 +187,15 @@ export function TrendSheet({ stock, focus, onClose }) {
   const monthTicks = dates.map((d, i) => ({ d, i }))
     .filter(({ d, i }) => i > 0 && d.getMonth() !== dates[i - 1].getMonth())
     .filter((t, k, a) => k === 0 ? t.i >= 2 || true : t.i - a[k - 1].i >= 3);
+  const starts = {};
+  SCORE_META.filter((m) => on[m.key]).forEach((m) => {
+    const f = data[m.key].findIndex((v) => v != null);
+    if (f > 0) (starts[f] ??= []).push(m.key);
+  });
+  const nOn = SCORE_META.filter((m) => on[m.key]).length;
+  const startMarks = Object.entries(starts).map(([i, keys]) => ({
+    i: +i, label: keys.length === nOn && nOn > 1 ? 'History starts' : `${keys.join(', ')} starts`,
+  }));
   const missing = SCORE_META.some((m) => on[m.key] && data[m.key][cur] == null && data[m.key].slice(0, cur).some((v) => v != null));
 
   return (
@@ -203,11 +214,11 @@ export function TrendSheet({ stock, focus, onClose }) {
 
         <div className="px-4">
           <div className="flex items-center gap-2">
-            {[12, 26].map((r) => (
-              <button key={r} disabled={r === 26 && !can26} onClick={() => { setRange(r); setHi(null); }}
-                className={`h-9 px-4 rounded-lg text-[14px] font-medium ${range === r ? 'bg-s-brand text-white' : r === 26 && !can26 ? 'bg-s-card text-s-dim' : 'bg-s-chip'}`}>{r}W</button>
+            {ranges.map((r) => (
+              <button key={r.label} onClick={() => { setRange(r.w); setHi(null); }}
+                className={`h-9 px-4 rounded-lg text-[14px] font-medium ${range === r.w ? 'bg-s-brand text-white' : 'bg-s-chip'}`}>{r.label}</button>
             ))}
-            <span className="ml-auto text-[11px] text-s-muted">{can26 ? '' : `${maxPts} weeks of history`}</span>
+            {ranges.length < RANGES.length && <span className="ml-auto text-[11px] text-s-muted">{maxPts} weeks of history so far</span>}
           </div>
 
           <div className="mt-3 flex flex-wrap gap-2">
@@ -252,22 +263,21 @@ export function TrendSheet({ stock, focus, onClose }) {
             ))}
             {SCORE_META.filter((m) => on[m.key]).map((m) => {
               const vals = data[m.key];
-              const first = vals.findIndex((v) => v != null);
               return (
                 <g key={m.key}>
                   {gapBridges(vals, x, y).map((b, i) => <line key={i} {...b} stroke={m.color} strokeDasharray="3 3" strokeWidth="1.5" opacity="0.6" />)}
                   {stepPaths(vals, x, y).map((d, i) => <path key={i} d={d} fill="none" stroke={m.color} strokeWidth={focus === m.key ? 3 : 2.2} strokeLinejoin="round" />)}
                   {countPts(vals) < 4 && vals.map((v, i) => v != null && <circle key={i} cx={x(i)} cy={y(v)} r="3" fill={m.color} />)}
-                  {first > 0 && (
-                    <g>
-                      <line x1={x(first)} x2={x(first)} y1={T} y2={H - B} stroke={m.color} strokeDasharray="2 3" opacity="0.5" />
-                      <text x={x(first) + 3} y={T + 9} fontSize="9.5" fill={m.color}>{m.key} starts {fmtWeek(dates[first])}</text>
-                    </g>
-                  )}
                   {vals[cur] != null && <circle cx={x(cur)} cy={y(vals[cur])} r="4" fill={m.color} stroke="#fff" strokeWidth="1.5" />}
                 </g>
               );
             })}
+            {startMarks.map((g, k) => (
+              <g key={g.i}>
+                <line x1={x(g.i)} x2={x(g.i)} y1={T} y2={H - B} stroke="#8A8A8A" strokeDasharray="2 3" />
+                <text x={x(g.i) + 3} y={T + 9 + k * 11} fontSize="9.5" fill="#7F7F7F">{g.label} {fmtWeek(dates[g.i])}</text>
+              </g>
+            ))}
             <line x1={x(cur)} x2={x(cur)} y1={T} y2={H - B} stroke="#202020" strokeWidth="0.8" opacity="0.35" />
           </svg>
           <div className="text-[11px] text-s-muted -mt-1">Drag across the chart to read any week.</div>
@@ -312,7 +322,7 @@ export function UltraSheet({ tier, onClose }) {
         <div className="mx-auto h-1 w-10 rounded-full bg-s-border" />
         <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-s-ultraSoft text-s-ultra text-[11px] font-semibold px-2.5 py-1">ULTRA · FROM {ULTRA_LAUNCH.toUpperCase()}</div>
         <h3 className="mt-3 text-[20px] font-semibold">See where the scores are heading</h3>
-        <p className="mt-1 text-[14px] text-s-muted">Ultra shows 12 and 26-week trends for FQS, TMS and DVES on every Universe stock, so you can tell an improving 62 from a fading one.</p>
+        <p className="mt-1 text-[14px] text-s-muted">Ultra shows 3-month, 6-month and 1-year trends for FQS, TMS and DVES on every Universe stock, so you can tell an improving 62 from a fading one.</p>
         <ul className="mt-3 space-y-1.5 text-[14px]">
           <li>• Week-by-week trend lines with the 60 alert level</li>
           <li>• Change since last week on every score</li>

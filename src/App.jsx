@@ -34,7 +34,7 @@ export default function App() {
         <div>
           <div className="text-[13px] text-neutral-500">StonksAI prototype · Stocks page</div>
           <h1 className="text-[22px] font-bold leading-tight mt-0.5">Weekly score trends (Ultra)</h1>
-          <p className="text-[13px] text-neutral-600 mt-1">The Weekly Scores card shows 12-week sparklines for FQS, TMS and DVES. Tap a row or ⤢ to open the full chart. The Watch button opens Alert for My Stock.</p>
+          <p className="text-[13px] text-neutral-600 mt-1">The Weekly Scores card shows 3-month sparklines for FQS, TMS and DVES. Tap a row or ⤢ to open the full chart. The Watch button opens Alert for My Stock.</p>
         </div>
         <Seg label="Plan" value={tier} options={TIERS} onChange={setTier}
           notes={tier === 'Ultra' ? 'Trends are unlocked.' : 'Current scores visible; trends blurred with an Ultra prompt.'} />
