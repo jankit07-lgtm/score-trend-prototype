@@ -1,0 +1,6 @@
+@tailwind base; @tailwind components; @tailwind utilities;
+body { @apply bg-neutral-200 font-sans antialiased text-s-text; font-variant-numeric: tabular-nums; }
+.no-scrollbar::-webkit-scrollbar{display:none}.no-scrollbar{scrollbar-width:none}
+@keyframes up{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sheet-in{animation:up .22s ease-out}
+@media (prefers-reduced-motion: reduce){.sheet-in{animation:none}}
